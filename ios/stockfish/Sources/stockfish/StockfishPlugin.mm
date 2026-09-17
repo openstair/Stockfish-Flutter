@@ -1,4 +1,4 @@
-#import "StockfishPlugin.h"
+#import "stockfish/StockfishPlugin.h"
 #import "ffi.h"
 
 @implementation StockfishPlugin
