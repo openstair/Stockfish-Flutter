@@ -1,24 +1,62 @@
 # iOS Swift Package Manager migration
 
-This version adds Swift Package Manager support for the iOS Stockfish plugin.
+This version uses Swift Package Manager for iOS. CocoaPods is not part of the
+Stockfish plugin.
 
-## Important
+## NNUE files
 
-The Stockfish NNUE data is committed as normal Git files under:
+The Stockfish NNUE files are intentionally **not committed to Git** and are
+not stored in Git LFS.
 
-`ios/stockfish/Sources/stockfish/Stockfish/src/nnue_embedded/`
+Before building the iOS package, run:
 
-The 109 MB network is split into three files below GitHub's normal 100 MiB
-Git blob limit. `network.cpp` embeds the three parts consecutively with
-`incbin.h`, preserving the exact original NNUE byte stream.
+```bash
+cd ios/stockfish
+./download_nnue.sh
+```
 
-The plugin therefore requires no Git LFS, NNUE authentication, or network
-download during build or runtime.
+The script downloads the two required networks into:
 
-The Stockfish CLI entry point is stored as `stockfish_main.cpp` rather than
-`main.cpp`. Swift Package Manager treats a source file named `main.cpp` as an
-executable entry point; renaming it keeps the target a library while preserving
-the same exported `main(int, char**)` function used by `ffi.cpp`.
+```text
+ios/stockfish/Sources/stockfish/Stockfish/src/nnue_embedded/
+```
+
+It verifies both files with SHA-256 before allowing the build to continue.
+
+The NNUE files are then embedded into the native Stockfish binary at compile
+time with `incbin.h`. They are not runtime resources and are not downloaded by
+the app.
+
+### Flutter Pub cache
+
+When the plugin is consumed as a Git dependency, Flutter checks it out under
+`~/.pub-cache/git/Stockfish-Flutter-<commit>/`.
+
+Run the script from that checkout:
+
+```bash
+CACHE="$(ls -d ~/.pub-cache/git/Stockfish-Flutter-* | head -1)"
+"$CACHE/ios/stockfish/download_nnue.sh"
+```
+
+If the download server is unavailable, manually place the two verified NNUE
+files in the `nnue_embedded` directory shown above.
+
+## Important SwiftPM limitation
+
+SwiftPM package build plugins cannot be used here as an automatic replacement
+for the old CocoaPods `script_phase`: network access for a build-time plugin is
+sandboxed. Therefore the download is an explicit package setup step rather than
+a hidden network operation during compilation.
+
+## Native API
+
+The existing exported FFI functions and Dart API are unchanged:
+
+- `stockfish_init`
+- `stockfish_main`
+- `stockfish_stdin_write`
+- `stockfish_stdout_read`
 
 ## iOS package
 
@@ -26,47 +64,15 @@ The Swift package is:
 
 `ios/stockfish/Package.swift`
 
-It uses Flutter's generated `FlutterFramework` local package dependency.
+The package uses Flutter's generated `FlutterFramework` local package
+dependency.
 
-## Legacy CocoaPods
+## Build
 
-`ios/stockfish.podspec` is retained for compatibility with Flutter projects
-that still use CocoaPods. It points to the same migrated source tree and no
-longer contains NNUE download script phases.
-
-## Native API
-
-The existing exported FFI functions and Dart API are preserved:
-
-- `stockfish_init`
-- `stockfish_main`
-- `stockfish_stdin_write`
-- `stockfish_stdout_read`
-
-The iOS implementation continues to use `DynamicLibrary.process()`.
-
-## Recommended verification
-
-Use Flutter 3.44 or later.
+After downloading the NNUE files into the package checkout:
 
 ```bash
 flutter clean
-flutter pub get
-flutter run
-```
-
-For an archive:
-
-```bash
+flutter pub get --no-example
 flutter build ipa
 ```
-
-In Xcode, verify that the generated `FlutterGeneratedPluginSwiftPackage`
-contains the `stockfish` package and that the package builds for the intended
-device/simulator architecture.
-
-## Important limitation
-
-This environment cannot run Xcode/iOS builds, so this ZIP has been checked
-structurally and the Swift package manifest has been prepared, but an actual
-Xcode compile/archive still needs to be performed on macOS with Xcode.

@@ -36,53 +36,18 @@
 #include "nnue_common.h"
 #include "nnue_misc.h"
 
-// Macro to embed the default efficiently updatable neural network (NNUE) file
-// data in the engine binary (using incbin.h, by Dale Weiler).
-// The large network is stored as several normal Git files because GitHub limits
-// ordinary Git blobs to 100 MiB. The assembler concatenates the parts directly,
-// so the resulting embedded byte stream is identical to the original NNUE file.
+// Embed the default NNUE networks directly into the engine binary.
+// The actual NNUE files are downloaded separately by download_nnue.sh and are
+// deliberately not committed to Git.
 #if !defined(_MSC_VER) && !defined(NNUE_EMBEDDING_OFF)
-#ifndef STOCKFISH_NNUE_BIG_PART01_PATH
-#define STOCKFISH_NNUE_BIG_PART01_PATH EvalFileDefaultNameBig
-#endif
-#ifndef STOCKFISH_NNUE_BIG_PART02_PATH
-#define STOCKFISH_NNUE_BIG_PART02_PATH EvalFileDefaultNameBig
-#endif
-#ifndef STOCKFISH_NNUE_BIG_PART03_PATH
-#define STOCKFISH_NNUE_BIG_PART03_PATH EvalFileDefaultNameBig
+#ifndef STOCKFISH_NNUE_BIG_PATH
+#define STOCKFISH_NNUE_BIG_PATH EvalFileDefaultNameBig
 #endif
 #ifndef STOCKFISH_NNUE_SMALL_PATH
 #define STOCKFISH_NNUE_SMALL_PATH EvalFileDefaultNameSmall
 #endif
 
-INCBIN_EXTERN(EmbeddedNNUEBig);
-INCBIN_EXTERN(EmbeddedNNUESmall);
-
-#define INCBIN_SPLIT_3(NAME, FILENAME1, FILENAME2, FILENAME3) \
-    __asm__(INCBIN_SECTION \
-            INCBIN_GLOBAL_LABELS(NAME, DATA) \
-            INCBIN_ALIGN_HOST \
-            INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(DATA) ":\n" \
-            INCBIN_MACRO " \"" FILENAME1 "\"\n" \
-            INCBIN_MACRO " \"" FILENAME2 "\"\n" \
-            INCBIN_MACRO " \"" FILENAME3 "\"\n" \
-            INCBIN_GLOBAL_LABELS(NAME, END) \
-            INCBIN_ALIGN_BYTE \
-            INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(END) ":\n" \
-            INCBIN_BYTE "1\n" \
-            INCBIN_GLOBAL_LABELS(NAME, SIZE) \
-            INCBIN_ALIGN_HOST \
-            INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(SIZE) ":\n" \
-            INCBIN_INT INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(END) " - " \
-                       INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(DATA) "\n" \
-            INCBIN_ALIGN_HOST \
-            ".text\n" \
-    );
-
-INCBIN_SPLIT_3(EmbeddedNNUEBig,
-                STOCKFISH_NNUE_BIG_PART01_PATH,
-                STOCKFISH_NNUE_BIG_PART02_PATH,
-                STOCKFISH_NNUE_BIG_PART03_PATH);
+INCBIN(EmbeddedNNUEBig, STOCKFISH_NNUE_BIG_PATH);
 INCBIN(EmbeddedNNUESmall, STOCKFISH_NNUE_SMALL_PATH);
 #else
 const unsigned char        gEmbeddedNNUEBigData[1]   = {0x0};
