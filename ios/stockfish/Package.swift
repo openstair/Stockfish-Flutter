@@ -51,6 +51,7 @@ let package = Package(
             publicHeadersPath: "include",
             cxxSettings: [
                 .headerSearchPath("include/stockfish"),
+                .headerSearchPath("FlutterStockfish"),
                 .headerSearchPath("Stockfish/src"),
 
                 .define("USE_PTHREADS"),
