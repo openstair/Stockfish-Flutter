@@ -2,29 +2,25 @@
 
 ## NNUE embedding
 
-The Stockfish NNUE networks are bundled in `Sources/stockfish/Stockfish/src/`:
+The NNUE networks are stored as normal Git files under:
 
-- `nn-c288c895ea92.nnue`
+`Sources/stockfish/Stockfish/src/nnue_embedded/`
+
+The large network is split into three files because GitHub's normal Git blob
+limit is 100 MiB:
+
+- `nn-c288c895ea92.part01`
+- `nn-c288c895ea92.part02`
+- `nn-c288c895ea92.part03`
+
+The smaller network is stored directly as:
+
 - `nn-37f18f62d772.nnue`
 
-Stockfish's `incbin.h` embeds these files into the native binary at compile time. SwiftPM/Xcode compile C++ sources from a derived build directory, so the assembler cannot find a source-adjacent `.incbin` file using only the C++ header search path.
+`network.cpp` uses `.incbin` consecutively with no padding between the three
+large-network parts, so the embedded byte stream is identical to the original
+109 MB NNUE file.
 
-`Package.swift` therefore derives the package's absolute `Stockfish/src` path from `#filePath` and passes it to Clang's integrated assembler with:
-
-```text
--Wa,-I,<package>/Sources/stockfish/Stockfish/src
-```
-
-This is the critical fix for Xcode's:
-
-```text
-Could not find incbin file 'nn-c288c895ea92.nnue'
-```
-
-and
-
-```text
-Could not find incbin file 'nn-37f18f62d772.nnue'
-```
-
-No runtime download is required.
+`Package.swift` derives the package's absolute path from `#filePath` and passes
+the four NNUE paths to the C++ compiler. No Git LFS, runtime download, or
+build-time network download is required.

@@ -38,22 +38,51 @@
 
 // Macro to embed the default efficiently updatable neural network (NNUE) file
 // data in the engine binary (using incbin.h, by Dale Weiler).
-// This macro invocation will declare the following three variables
-//     const unsigned char        gEmbeddedNNUEData[];  // a pointer to the embedded data
-//     const unsigned char *const gEmbeddedNNUEEnd;     // a marker to the end
-//     const unsigned int         gEmbeddedNNUESize;    // the size of the embedded file
-// Note that this does not work in Microsoft Visual Studio.
+// The large network is stored as several normal Git files because GitHub limits
+// ordinary Git blobs to 100 MiB. The assembler concatenates the parts directly,
+// so the resulting embedded byte stream is identical to the original NNUE file.
 #if !defined(_MSC_VER) && !defined(NNUE_EMBEDDING_OFF)
-// Swift Package Manager builds sources from a derived directory. The assembler
-// does not resolve .incbin paths relative to this C++ source file, so the Swift
-// package supplies absolute paths to the bundled NNUE files via compiler macros.
-#ifndef STOCKFISH_NNUE_BIG_PATH
-#define STOCKFISH_NNUE_BIG_PATH EvalFileDefaultNameBig
+#ifndef STOCKFISH_NNUE_BIG_PART01_PATH
+#define STOCKFISH_NNUE_BIG_PART01_PATH EvalFileDefaultNameBig
+#endif
+#ifndef STOCKFISH_NNUE_BIG_PART02_PATH
+#define STOCKFISH_NNUE_BIG_PART02_PATH EvalFileDefaultNameBig
+#endif
+#ifndef STOCKFISH_NNUE_BIG_PART03_PATH
+#define STOCKFISH_NNUE_BIG_PART03_PATH EvalFileDefaultNameBig
 #endif
 #ifndef STOCKFISH_NNUE_SMALL_PATH
 #define STOCKFISH_NNUE_SMALL_PATH EvalFileDefaultNameSmall
 #endif
-INCBIN(EmbeddedNNUEBig, STOCKFISH_NNUE_BIG_PATH);
+
+INCBIN_EXTERN(EmbeddedNNUEBig);
+INCBIN_EXTERN(EmbeddedNNUESmall);
+
+#define INCBIN_SPLIT_3(NAME, FILENAME1, FILENAME2, FILENAME3) \
+    __asm__(INCBIN_SECTION \
+            INCBIN_GLOBAL_LABELS(NAME, DATA) \
+            INCBIN_ALIGN_HOST \
+            INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(DATA) ":\n" \
+            INCBIN_MACRO " \"" FILENAME1 "\"\n" \
+            INCBIN_MACRO " \"" FILENAME2 "\"\n" \
+            INCBIN_MACRO " \"" FILENAME3 "\"\n" \
+            INCBIN_GLOBAL_LABELS(NAME, END) \
+            INCBIN_ALIGN_BYTE \
+            INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(END) ":\n" \
+            INCBIN_BYTE "1\n" \
+            INCBIN_GLOBAL_LABELS(NAME, SIZE) \
+            INCBIN_ALIGN_HOST \
+            INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(SIZE) ":\n" \
+            INCBIN_INT INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(END) " - " \
+                       INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME INCBIN_STYLE_STRING(DATA) "\n" \
+            INCBIN_ALIGN_HOST \
+            ".text\n" \
+    );
+
+INCBIN_SPLIT_3(EmbeddedNNUEBig,
+                STOCKFISH_NNUE_BIG_PART01_PATH,
+                STOCKFISH_NNUE_BIG_PART02_PATH,
+                STOCKFISH_NNUE_BIG_PART03_PATH);
 INCBIN(EmbeddedNNUESmall, STOCKFISH_NNUE_SMALL_PATH);
 #else
 const unsigned char        gEmbeddedNNUEBigData[1]   = {0x0};

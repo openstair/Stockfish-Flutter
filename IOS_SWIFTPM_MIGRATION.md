@@ -4,14 +4,16 @@ This version adds Swift Package Manager support for the iOS Stockfish plugin.
 
 ## Important
 
-The two Stockfish NNUE files are committed under:
+The Stockfish NNUE data is committed as normal Git files under:
 
-`ios/stockfish/Sources/stockfish/Stockfish/src/`
+`ios/stockfish/Sources/stockfish/Stockfish/src/nnue_embedded/`
 
-They are **not** Swift package runtime resources. Stockfish's `incbin.h` embeds
-the default networks into the native binary at compile time.
+The 109 MB network is split into three files below GitHub's normal 100 MiB
+Git blob limit. `network.cpp` embeds the three parts consecutively with
+`incbin.h`, preserving the exact original NNUE byte stream.
 
-The plugin therefore does not download NNUE files during build or runtime.
+The plugin therefore requires no Git LFS, NNUE authentication, or network
+download during build or runtime.
 
 The Stockfish CLI entry point is stored as `stockfish_main.cpp` rather than
 `main.cpp`. Swift Package Manager treats a source file named `main.cpp` as an

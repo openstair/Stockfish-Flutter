@@ -32,8 +32,14 @@ Pod::Spec.new do |s|
     'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386'
   }
 
-  # The NNUE files are committed to the package and embedded by Stockfish's
-  # incbin.h during compilation. No network download is required.
+  # NNUE files are committed as normal Git files. The large network is split
+  # into three parts and network.cpp embeds the parts consecutively.
+  nnue_dir = '${PODS_TARGET_SRCROOT}/stockfish/Sources/stockfish/Stockfish/src/nnue_embedded'
+  nnue_flags = "-DSTOCKFISH_NNUE_BIG_PART01_PATH=\"#{nnue_dir}/nn-c288c895ea92.part01\" " \
+               "-DSTOCKFISH_NNUE_BIG_PART02_PATH=\"#{nnue_dir}/nn-c288c895ea92.part02\" " \
+               "-DSTOCKFISH_NNUE_BIG_PART03_PATH=\"#{nnue_dir}/nn-c288c895ea92.part03\" " \
+               "-DSTOCKFISH_NNUE_SMALL_PATH=\"#{nnue_dir}/nn-37f18f62d772.nnue\""
+
   s.library = 'c++'
 
   s.xcconfig = {
@@ -41,13 +47,13 @@ Pod::Spec.new do |s|
     'CLANG_CXX_LIBRARY' => 'libc++',
 
     'OTHER_CPLUSPLUSFLAGS[config=Debug]' =>
-      '$(inherited) -std=c++17 -DUSE_PTHREADS -DIS_64BIT -DUSE_POPCNT -I"${PODS_TARGET_SRCROOT}/stockfish/Sources/stockfish/Stockfish/src"',
+      "$(inherited) #{nnue_flags} -std=c++17 -DUSE_PTHREADS -DIS_64BIT -DUSE_POPCNT -I\"${PODS_TARGET_SRCROOT}/stockfish/Sources/stockfish/Stockfish/src\"",
 
     'OTHER_LDFLAGS[config=Debug]' =>
       '$(inherited) -std=c++17 -DUSE_PTHREADS -DIS_64BIT -DUSE_POPCNT',
 
     'OTHER_CPLUSPLUSFLAGS[config=Release]' =>
-      '$(inherited) -fno-exceptions -std=c++17 -DUSE_PTHREADS -DNDEBUG -O3 -DIS_64BIT -DUSE_POPCNT -DUSE_NEON=8 -flto=full -I"${PODS_TARGET_SRCROOT}/stockfish/Sources/stockfish/Stockfish/src"',
+      "$(inherited) #{nnue_flags} -fno-exceptions -std=c++17 -DUSE_PTHREADS -DNDEBUG -O3 -DIS_64BIT -DUSE_POPCNT -DUSE_NEON=8 -flto=full -I\"${PODS_TARGET_SRCROOT}/stockfish/Sources/stockfish/Stockfish/src\"",
 
     'OTHER_LDFLAGS[config=Release]' =>
       '$(inherited) -fno-exceptions -std=c++17 -DUSE_PTHREADS -DNDEBUG -O3 -DIS_64BIT -DUSE_POPCNT -DUSE_NEON=8 -flto=full'
