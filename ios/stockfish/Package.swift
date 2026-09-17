@@ -9,6 +9,15 @@
 // incbin.h at compile time; they are not runtime package resources.
 
 import PackageDescription
+import Foundation
+
+// SwiftPM compiles C++ sources from a derived build directory. Stockfish
+// uses the assembler-level .incbin directive, whose relative lookup is based
+// on the assembler search path rather than the C++ source file location.
+// Add the package's Stockfish/src directory to the assembler include path so
+// the bundled NNUE files are found in both Xcode and command-line builds.
+let packageRoot = URL(fileURLWithPath: #filePath).deletingLastPathComponent().path
+let stockfishSourcePath = "\(packageRoot)/Sources/stockfish/Stockfish/src"
 
 let package = Package(
     name: "stockfish",
@@ -54,7 +63,13 @@ let package = Package(
                     "-O3",
                     "-DUSE_NEON=8",
                     "-flto=full"
-                ], .when(configuration: .release))
+                ], .when(configuration: .release)),
+
+                // network.cpp uses incbin.h, which expands to assembler .incbin
+                // directives for the two bundled NNUE files.
+                .unsafeFlags([
+                    "-Wa,-I,\(stockfishSourcePath)"
+                ])
             ],
             linkerSettings: [
                 .linkedLibrary("c++")
