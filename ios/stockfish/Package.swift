@@ -41,6 +41,7 @@ let package = Package(
                 )
             ],
             exclude: [
+                "Stockfish/src/stockfish_main.cpp",
                 "Stockfish/src/incbin/UNLICENCE"
             ],
             publicHeadersPath: "include",
