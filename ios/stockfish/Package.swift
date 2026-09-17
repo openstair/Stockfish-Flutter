@@ -2,9 +2,11 @@
 //
 // Swift Package Manager support for the Flutter Stockfish plugin.
 //
-// The Stockfish C++ engine and the NNUE files are intentionally kept in the
-// same target. Stockfish's incbin.h embeds the default NNUE files directly
-// into the native binary at compile time; they are not runtime resources.
+// Stockfish is a C++ engine. Its standalone CLI entry point is kept as
+// stockfish_main.cpp (rather than main.cpp) so SwiftPM treats this target
+// as a library. The Flutter FFI bridge calls main(argc, argv) directly.
+// The NNUE files are source-adjacent because Stockfish embeds them with
+// incbin.h at compile time; they are not runtime package resources.
 
 import PackageDescription
 
@@ -47,10 +49,6 @@ let package = Package(
                 .define("USE_POPCNT"),
 
                 .unsafeFlags([
-                    "-std=c++17"
-                ]),
-
-                .unsafeFlags([
                     "-fno-exceptions",
                     "-DNDEBUG",
                     "-O3",
@@ -62,5 +60,6 @@ let package = Package(
                 .linkedLibrary("c++")
             ]
         )
-    ]
+    ],
+    cxxLanguageStandard: .cxx17
 )

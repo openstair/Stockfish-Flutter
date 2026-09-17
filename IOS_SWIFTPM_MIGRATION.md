@@ -13,6 +13,11 @@ the default networks into the native binary at compile time.
 
 The plugin therefore does not download NNUE files during build or runtime.
 
+The Stockfish CLI entry point is stored as `stockfish_main.cpp` rather than
+`main.cpp`. Swift Package Manager treats a source file named `main.cpp` as an
+executable entry point; renaming it keeps the target a library while preserving
+the same exported `main(int, char**)` function used by `ffi.cpp`.
+
 ## iOS package
 
 The Swift package is:
