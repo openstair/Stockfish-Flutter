@@ -44,8 +44,17 @@
 //     const unsigned int         gEmbeddedNNUESize;    // the size of the embedded file
 // Note that this does not work in Microsoft Visual Studio.
 #if !defined(_MSC_VER) && !defined(NNUE_EMBEDDING_OFF)
-INCBIN(EmbeddedNNUEBig, EvalFileDefaultNameBig);
-INCBIN(EmbeddedNNUESmall, EvalFileDefaultNameSmall);
+// Swift Package Manager builds sources from a derived directory. The assembler
+// does not resolve .incbin paths relative to this C++ source file, so the Swift
+// package supplies absolute paths to the bundled NNUE files via compiler macros.
+#ifndef STOCKFISH_NNUE_BIG_PATH
+#define STOCKFISH_NNUE_BIG_PATH EvalFileDefaultNameBig
+#endif
+#ifndef STOCKFISH_NNUE_SMALL_PATH
+#define STOCKFISH_NNUE_SMALL_PATH EvalFileDefaultNameSmall
+#endif
+INCBIN(EmbeddedNNUEBig, STOCKFISH_NNUE_BIG_PATH);
+INCBIN(EmbeddedNNUESmall, STOCKFISH_NNUE_SMALL_PATH);
 #else
 const unsigned char        gEmbeddedNNUEBigData[1]   = {0x0};
 const unsigned char* const gEmbeddedNNUEBigEnd       = &gEmbeddedNNUEBigData[1];

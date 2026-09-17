@@ -66,9 +66,14 @@ let package = Package(
                 ], .when(configuration: .release)),
 
                 // network.cpp uses incbin.h, which expands to assembler .incbin
-                // directives for the two bundled NNUE files.
+                // directives. SwiftPM/Xcode assembles from a derived directory,
+                // so an assembler search path alone is not reliable for inline
+                // assembly. Pass the package-resolved absolute file paths to the
+                // C++ source instead. The paths are only build-time metadata; the
+                // NNUE bytes are still embedded into the engine binary.
                 .unsafeFlags([
-                    "-Wa,-I,\(stockfishSourcePath)"
+                    "-DSTOCKFISH_NNUE_BIG_PATH=\"\(stockfishSourcePath)/nn-c288c895ea92.nnue\"",
+                    "-DSTOCKFISH_NNUE_SMALL_PATH=\"\(stockfishSourcePath)/nn-37f18f62d772.nnue\""
                 ])
             ],
             linkerSettings: [
